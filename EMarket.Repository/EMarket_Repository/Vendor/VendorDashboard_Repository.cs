@@ -1,0 +1,74 @@
+﻿using EMarket.DLL.Comman_Data;
+using EMarket.DLL.Interfaces.Vendor;
+using EMarketDTO.Vendar;
+using LiteX.DbHelper.Core;
+using LiteX.DbHelper.Npgsql;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
+using System.Text;
+
+namespace EMarket.DLL.EMarket_Repository.Vendor
+{
+   public class VendorDashboard_Repository: IVendorDashboard_Repository
+    {
+        comman_class cmm = new comman_class();
+        int status = 0;
+        List<string> invalue = new List<string>();
+        public VendorDashboard_Repository()
+        {
+
+        }
+        public Vendor_All_Order_ListDTO update_order(Vendor_All_Order_ListDTO dto)
+        {
+            var tracking_string = cmm.RandomString(10);
+            var tracking_int = cmm.RandomString(5);
+            var tracking_id = dto.order_id + "_" + tracking_string + tracking_int;
+
+            IDbHelper _dbHelper = new NpgsqlHelper(cmm.ConnectionString);
+
+            var dbParams = new DbParameter[]
+            {
+                    DbHelper.CreateParameter("in_order_item_id", dto.order_item_id),
+                    DbHelper.CreateParameter("in_order_id", dto.order_id),
+                    DbHelper.CreateParameter("in_item_id", dto.item_id),
+                    DbHelper.CreateParameter("in_vendor_id", dto.vendor_id),
+                    DbHelper.CreateParameter("in_order_accept_status", dto.order_accept_status),
+                    DbHelper.CreateParameter("in_order_accept_comment", dto.order_accept_comment),
+                    DbHelper.CreateParameter("in_tracking_id", tracking_id),
+                    DbHelper.CreateParameter("in_item_l", dto.item_l),
+                    DbHelper.CreateParameter("in_item_b", dto.item_b),
+                    DbHelper.CreateParameter("in_item_h", dto.item_h),
+                    DbHelper.CreateParameter("in_item_w", dto.item_w),
+                    DbHelper.CreateParameter("in_user_id", dto.user_id),
+                    DbHelper.CreateParameter("in_language_id", dto.language_id)
+
+
+            };
+            foreach (var item in dbParams)
+            {
+                invalue.Add(item.ParameterName + ':' + item.Value);
+            }
+            dto.inputvalue = Newtonsoft.Json.JsonConvert.SerializeObject(invalue);
+            dto.procedure_name = "call sp_update_vendor_order(:in_order_item_id,:in_order_id,:in_item_id,:in_vendor_id,:in_order_accept_status,:in_order_accept_comment,:in_tracking_id,:in_item_l,:in_item_b,:in_item_h,:in_item_w,:in_user_id,:in_language_id)";
+            status = _dbHelper.ExecuteNonQuery(dto.procedure_name, CommandType.Text, dbParams);
+           
+
+            if (status == -1)
+            {
+                dto.status = "Update";
+                dto.message = "Order/Item '" + dto.order_accept_status + "' ";
+            }
+            else
+            {
+                dto.status = "Failed";
+                dto.message = "Order/Item Not Accept/Reject, Please Try Again";
+            }
+
+            return dto;
+        }
+
+       
+    }
+}

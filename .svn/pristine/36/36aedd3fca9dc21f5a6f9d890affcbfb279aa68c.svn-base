@@ -1,0 +1,44 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace EMarketDTO.Vendar
+{
+    public class Vendor_All_Order_ListDTO
+    {
+        public long user_id { get; set; }
+        public string username { get; set; }
+        public long roleid { get; set; }
+        public string ipAddress { get; set; }
+        public string procedure_name { get; set; }
+        public string all_order_count { get; set; }
+        public string accept_order_count { get; set; }
+        public string reject_order_count { get; set; }
+        public string apitype { get; set; }
+        public long language_id { get; set; }
+        public long source_hub_id { get; set; }
+        public long vendor_id { get; set; }
+        public string order_accept_status { get; set; }
+        public string order_accept_comment { get; set; }
+        public long order_item_id { get; set; }
+        public long order_id { get; set; }
+        public long product_id { get; set; }
+        public long item_id { get; set; }
+        public string vendor_order_list { get; set; }
+        public string item_lbh_list { get; set; }
+        public string pending_order_list { get; set; }
+        public string inputvalue { get; set; }
+        public string status { get; set; }
+        public string message { get; set; }
+        public long item_l { get; set; }
+        public long item_b { get; set; }
+        public long item_h { get; set; }
+        public decimal item_w { get; set; }
+        public long first_hub_id { get; set; }
+        public long last_hub_id { get; set; }
+        public string hub_list_1 { get; set; }
+        public string hub_list_2 { get; set; }
+        public string first_last_hub { get; set; }
+
+    }
+}

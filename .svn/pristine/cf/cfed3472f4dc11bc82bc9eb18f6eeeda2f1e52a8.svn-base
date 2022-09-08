@@ -1,0 +1,423 @@
+using AutoMapper;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.Extensions.Logging;
+using EMarket.Data;
+using EMarket.Helper;
+using EMarket.Mapper;
+using EMarket.Repository;
+using EMarket.Service;
+using EMarket.Service.Interfaces;
+using EMarket.Entities;
+using System;
+using Microsoft.AspNetCore.Antiforgery;
+using EMarket.BLL.EMarket_Service.Customer;
+using EMarket.DLL.EMarket_Repository.Customer;
+using EMarket.BLL.Interfaces.Customer;
+using EMarket.DLL.Interfaces.Customer;
+using EMarket.BLL.Interfaces.Vendor;
+using EMarket.BLL.EMarket_Service.Vendor;
+using EMarket.DLL.Interfaces.Vendor;
+using EMarket.DLL.EMarket_Repository.Vendor;
+using EMarket.DLL.Comman_Data.Comman_Interface;
+using EMarket.DLL.Comman_Data.Comman_Repository;
+using EMarket.BLL.EMarket_Service.Admin;
+using EMarket.BLL.Interfaces.Admin;
+using EMarket.DLL.Interfaces.Admin;
+using EMarket.DLL.EMarket_Repository.Admin;
+using EMarket.BLL.Comman_Class.Services;
+using EMarket.BLL.Comman_Class.Interface;
+using EMarket.BLL.Interfaces.Master;
+using EMarket.BLL.EMarket_Service.Master;
+using EMarket.DLL.Interfaces.Master;
+using EMarket.DLL.EMarket_Repository.Master;
+using EMarket.BLL.Interfaces.Home;
+using EMarket.BLL.EMarket_Service.Home;
+using EMarket.BLL.EMarket_Repository.Delivery;
+using EMarket.BLL.Interfaces.Delivery;
+using EMarket.BLL.Interfaces.HubManager;
+using EMarket.BLL.EMarket_Service.HubManager;
+using EMarket.BLL.Interfaces;
+using EMarket.BLL.EMarket_Service;
+using EMarket.BLL.Interfaces.Facilitation;
+using EMarket.BLL.EMarket_Service.Facilitation;
+using EMarket.BLL.EMarket_Service.Delivery;
+using EMarket.DLL.Interfaces;
+using EMarket.DLL.Interfaces.Delivery;
+using EMarket.DLL.EMarket_Repository.Delivery;
+
+namespace EMarket
+{
+    public class Startup
+    {
+        public static string CustomerCode = string.Empty;
+        //public static string UserCode = string.Empty;
+
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public static IConfiguration Configuration { get; private set; }
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+
+
+            var sqlConnectionString = Configuration["PostgreSqlConnectionString"];
+            services.AddDbContext<PostgreSqlContext>(options => options.UseNpgsql(sqlConnectionString));
+            // services.AddAntiforgery(options => options.HeaderName = "X-XSRF-TOKEN");
+
+            //services.AddAntiforgery(options =>
+            //{
+            //    options.FormFieldName = "AntiForgeryFieldName";
+            //    options.HeaderName = "AntiForgeryHeaderName";
+            //    options.Cookie.Name = "AntiForgeryCookieName";
+            //});
+
+            services.AddIdentity<ApplicationUser, IdentityRole>()
+                .AddEntityFrameworkStores<PostgreSqlContext>()
+                .AddUserManager<ApplicationUserManager<ApplicationUser>>()
+                .AddUserValidator<ApplicationUserValidator<ApplicationUser>>()
+                .AddDefaultTokenProviders();
+
+            services.AddSingleton(typeof(IServiceScopeFactory<>), typeof(ServiceScopeFactory<>));
+
+            services.AddSession();
+            services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(120);//We set Time here 
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
+
+            //services.AddMvc()
+            //   .AddJsonOptions(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+            //services.AddAntiforgery(o => o.HeaderName = "X-XSRF-TOKEN");
+
+            services.AddMvc()
+            .AddSessionStateTempDataProvider();
+            services.AddMvc(
+              config =>
+              {
+                  //config.Filters.Add(new GlobalInterceptor());
+              });
+
+            //Configure automapper
+            services.AddAutoMapper(typeof(DataMapper));
+            var jWTConfig = Configuration.GetSection(JWTConfig.ConfigurationSectionName).Get<JWTConfig>();
+            services.AddSingleton(jWTConfig);
+
+            // Adding Authentication  
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+
+            //Adding Jwt Bearer
+            .AddJwtBearer(options =>
+            {
+                options.SaveToken = true;
+                options.RequireHttpsMetadata = false;
+                options.TokenValidationParameters = new TokenValidationParameters()
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidAudience = jWTConfig.Audience,
+                    ValidIssuer = jWTConfig.Authority,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jWTConfig.Secret))
+                };
+            });
+
+
+          
+            services.AddScoped<IAdminRepository, AdminRepository>();        
+            services.AddScoped<IAdminService, AdminService>();  
+            
+            //DLL
+            services.AddScoped<IComman_Data, Comman_Data>();
+            services.AddScoped<ISql_Layer, Sql_Layer>();
+            services.AddScoped<IError_Log, Error_Log>();
+          
+
+            // BLL 
+            services.AddScoped<IErrorClass, ErrorClass>();
+            services.AddScoped<ISqlClass, SqlClass>();
+            services.AddScoped<IDuplicateCheck, DuplicateCheck>();
+            services.AddScoped<IMasterClass, MasterClass>();
+            
+            // Customer
+            services.AddScoped<ILanding_Repository, Landing_Repository>();
+            services.AddScoped<ILanding_Service, Landing_Service>();
+            services.AddScoped<ICartCheckout_Repository, CartCheckout_Repository>();
+            services.AddScoped<ICartCheckout_Service, CartCheckout_Service>();
+            services.AddScoped<ICartCheckPlaceOrder_Repository, CartCheckPlaceOrder_Repository>();
+            services.AddScoped<ICartCheckPlaceOrder_Service, CartCheckPlaceOrder_Service>();
+            services.AddScoped<ICustomer_Address_Service, Customer_Address_Service>();
+            services.AddScoped<ICustomer_Address_Repository, Customer_Address_Repository>();
+            services.AddScoped<ICustomer_Order_Track_Service, Customer_Order_Track_Service>();
+            services.AddScoped<ICustomer_Order_Track_Repository, Customer_Order_Track_Repository>();
+            services.AddScoped<ICustomer_Profile_Service, Customer_Profile_Service>();
+            services.AddScoped<ICustomer_Profile_Repository, Customer_Profile_Repository>();
+            services.AddScoped<IItems_View_Service, Items_View_Service>();
+            services.AddScoped<IItems_View_Repository, Items_View_Repository> ();
+            services.AddScoped<ILanding_Item_Details_Service, Landing_Item_Details_Service> ();
+            services.AddScoped<ILanding_Item_Details_Repository, Landing_Item_Details_Repository> ();
+            services.AddScoped<IShopping_Cart_Repository, Shopping_Cart_Repository> ();
+            services.AddScoped<IShopping_Cart_Service, Shopping_Cart_Service> ();
+
+            // Vendor 
+            services.AddScoped<IAdd_Item_Specification, Add_Item_Specification>();
+            services.AddScoped<IAdd_Item_Specification_Repository, Add_Item_Specification_Repository>();
+            services.AddScoped<IAll_Item, All_Item>();
+            services.AddScoped<IAll_Item_Repository, All_Item_Repository>();
+        
+            services.AddScoped<IVendor_Add_Item, Vendor_Add_Item>();
+            services.AddScoped<IVendor_Add_Item_Repository, Vendor_Add_Item_Repository>();
+            services.AddScoped<IVendor_Document_Repository, Vendor_Document_Repository>();
+            services.AddScoped<IVendor_Document, Vendor_Document>();
+            services.AddScoped<IVendor_Profile, Vendor_Profile>();
+            services.AddScoped<IVendor_Profile_Repository, Vendor_Profile_Repository>();
+            services.AddScoped<IVendor_reassign, Vendor_reassign>();
+            services.AddScoped<IVendor_reassign_Repository, Vendor_reassign_Repository>();
+
+            // Admin
+            services.AddScoped<IAddProduct, AddProduct>();
+            services.AddScoped<IAddProduct_Repository, AddProduct_Repository>();
+            services.AddScoped<IAll_Product, All_Product>();
+            services.AddScoped<IAll_Product_Repository, All_Product_Repository>();
+                   services.AddScoped<IItem_Specification_Mapping_Repository, Item_Specification_Mapping_Repository>();
+            services.AddScoped<IItem_Specification_Mapping, Item_Specification_Mapping>();
+            services.AddScoped<IItem_Verification_Repository, Item_Verification_Repository>();
+            services.AddScoped<IItem_Verification, Item_Verification>();
+            services.AddScoped<IManage_Subsubcategory_Repository, Manage_Subsubcategory_Repository>();
+            services.AddScoped<IManage_Subsubcategory, Manage_Subsubcategory>();
+            services.AddScoped<IMap_Category_Specification, Map_Category_Specification>();
+            services.AddScoped<IMap_Category_Specification_Repository, Map_Category_Specification_Repository>();
+            services.AddScoped<IMaster_Category_Specification, Master_Category_Specification>();
+            services.AddScoped<IMaster_Category_Specification_Repository, Master_Category_Specification_Repository>();
+            services.AddScoped<IProduct_Features, Product_Features>();
+            services.AddScoped<IProduct_Features_Repository, Product_Features_Repository>();
+            services.AddScoped<IProduct_Specification, Product_Specification>();
+            services.AddScoped<IProduct_Specification_Repository, Product_Specification_Repository>();
+            services.AddScoped<IMaster_Category, Master_Category>();
+            services.AddScoped<IMaster_Category_Repository, Master_Category_Repository>();
+            services.AddScoped<IMaster_Specification, Master_Specification>();  
+            services.AddScoped<IMap_Specification_Attribute, Map_Specification_Attribute>();  
+            services.AddScoped<IMap_Specification_Attribute_Repository, Map_Specification_Attribute_Repository>();  
+            services.AddScoped<IMaster_Specification_Repository, Master_Specification_Repository>();  
+            services.AddScoped<IVendor_All_Order_List, Vendor_All_Order_List>();  
+            services.AddScoped<IVendor_All_Order_List_Repository, Vendor_All_Order_List_Repository>();  
+            services.AddScoped<IVendorDashboard, VendorDashboard>();  
+            services.AddScoped<IVendorDashboard_Repository, VendorDashboard_Repository>();  
+            services.AddScoped<IPublic_ItemsView, Public_ItemsView>();  
+            services.AddScoped<IAdminDashboard, AdminDashboard>();
+            services.AddScoped<IDocument_verification_Repository, Document_verification_Repository>();
+            services.AddScoped<IDocument_verification, Document_verification>();
+            services.AddScoped<Imedia, media>();
+            services.AddScoped<Imedia_Repository, media_Repository>();
+            services.AddScoped<IVendor_Store, Vendor_Store>();  
+            services.AddScoped<IBanner, Banner>();  
+            services.AddScoped<ICancelOrderRequest, CancelOrderRequest>();  
+            services.AddScoped<Isearch_result_service, search_result>();  
+            services.AddScoped<Isearch_result_Repository, search_result_Repository>();  
+            services.AddScoped<ICancelOrderVerify, CancelOrderVerify>();  
+            services.AddScoped<IReturnOrderVerify, ReturnOrderVerify>();  
+            services.AddScoped<IOrderWise_Report, OrderWise_Report>();  
+            services.AddScoped<ICustomer_List, Customer_List>();  
+            services.AddScoped<IAccept_Delivery, Accept_Delivery>();
+            services.AddScoped<Imasterdocument, masterdocument>();
+            services.AddScoped<Imasterdocument_Repository, masterdocument_Repository>();
+            services.AddScoped<IUserCreation, UserCreation>();  
+            services.AddScoped<IManagehub, Managehub>();  
+            services.AddScoped<IManagehub_Repository, Managehub_Repository>();  
+            services.AddScoped<IManage_Pincode, Manage_Pincode>();  
+            services.AddScoped<IHub_Route, Hub_Route>();  
+            services.AddScoped<Ihubtofacilitationcenter, hubtofacilitationcenter>();  
+            services.AddScoped<Ihubtofacilitationcenter_Repository, hubtofacilitationcenter_Repository>();  
+            services.AddScoped<IVendortohub_Repository, Vendortohub_Repository>();  
+            services.AddScoped<IVendortohub, Vendortohub>();               
+            services.AddScoped<IMaster_Transport, Master_Transport>();  
+            services.AddScoped<IMaster_Country, Master_Country>();  
+            services.AddScoped<IConsignment, Consignment>();  
+            services.AddScoped<IHub_Consignment, Hub_Consignment>();
+          
+            services.AddScoped<IBanner_Repository, Banner_Repository>();
+
+            services.AddScoped<IAssign_Consignment, Assign_Consignment>();  
+            services.AddScoped<IFc_Consignment, Fc_Consignment>();  
+            services.AddScoped<IMasterFacilitation, MasterFacilitation>();  
+            services.AddScoped<IDelivery_to_Customer, Delivery_to_Customer>();  
+
+            services.AddScoped<IVerify_vendor_Profile, verify_vendor_profile>();  
+            services.AddScoped<IVerify_vendor_profile_Repository, Verify_vendor_Profile_Repository>();  
+            services.AddScoped<ICancelOrderVerify_Repository, CancelOrderVerify_Repository>();  
+            services.AddScoped<IHub_Route_Repository, Hub_Route_Repository>();  
+            services.AddScoped<IReturnOrderVerify_Repository, ReturnOrderVerify_Repository>();  
+            services.AddScoped<IAccept_Delivery_Repository, Accept_Delivery_Repository>();  
+            services.AddScoped<IUser_Creation_Repository, User_Creation_Repository>();  
+            services.AddScoped<IMaster_Vehicle_Type, Master_Vehicle_Type>();  
+            services.AddScoped<IMaster_Vehicle_Type_Repository, Master_Vehicle_Type_Repository>();  
+            services.AddScoped<IAssign_FcHub_HubFc, Assign_FcHub_HubFc>();  
+            services.AddScoped<IFc_To_Hub_Delivery, Fc_To_Hub_Delivery>();  
+            services.AddScoped<IHub_To_Fc_Delivery, Hub_To_Fc_Delivery>();  
+            services.AddScoped<IAssign_Hub_to_Hub, Assign_Hub_to_Hub>();  
+            services.AddScoped<ISend_Hub_to_Hub, Send_Hub_to_Hub>();  
+
+
+            services.AddScoped<ITest, Test>();  
+
+
+            //services.AddCors(options =>
+            //{
+            //    options.AddPolicy("allowCORS",
+            // builder =>
+            // {
+            // builder.WithOrigins("http://localhost:4200").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+            // });
+            //});
+            services.AddCors(options =>
+            {
+                options.AddPolicy("allowCORS",
+                builder =>
+                {
+                    builder.AllowAnyOrigin()
+                            .AllowAnyMethod()
+                            .AllowAnyHeader();
+                });
+            });
+
+
+            ConfigureSwagger(services, jWTConfig);
+
+            services.AddMvc(option => option.EnableEndpointRouting = false);
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, ILogger<Startup> logger, IAntiforgery antiforgery)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseHsts();
+            }
+
+            app.UseCors("allowCORS");
+            app.UseHttpsRedirection();
+            app.UseAuthentication();
+            app.UseAuthorization();
+            app.UseSession();
+            app.UseMvc();
+            // app.UseStaticFiles();
+
+            ////========== Start app index.html page middleware start Static Files =====
+
+            //DefaultFilesOptions defaultFilesOptions = new DefaultFilesOptions();
+            //defaultFilesOptions.DefaultFileNames.Clear();
+            //defaultFilesOptions.DefaultFileNames.Add("index.html");
+            ////Setting the Default Files
+            //app.UseDefaultFiles(defaultFilesOptions);
+
+
+            //  //Adding Static Files Middleware to serve the static files
+
+            //app.Run(async (context) =>
+            //{
+            //    await context.Response.WriteAsync("Request handled by the terminating middleware");
+            //});
+            //app.Use(next => context =>
+            //{
+            //    string path = context.Request.Path.Value;
+
+            //    // XSR Totek 
+            //    //{
+
+            //    //    var tokens = antiforgery.GetAndStoreTokens(context);
+            //    //    context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken,
+            //    //        new CookieOptions() { HttpOnly = false });
+            //    //}
+
+            //    return next(context);
+            //});
+
+            //========== Start app index.html page middleware End =====
+
+
+            app.UseSwagger();
+           
+            //app.UseSwaggerUI(c =>
+            //{
+            //    c.SwaggerEndpoint("/swagger/v1/swagger.json", "MyAPI");
+            //});
+            //logger.LogInformation("application started by Shiva");
+
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+               
+            });
+            
+            //app.UseSwaggerUI(c =>
+            //{
+            //    c.SwaggerEndpoint("/swagger/v1/swagger.json", "MyAPI");
+            //});
+             logger.LogInformation("application started by Shiva");
+
+        }
+
+        private void ConfigureSwagger(IServiceCollection services, JWTConfig jWTConfig)
+        {
+            services.AddSwaggerGen(swagger =>
+            {
+                //This is to generate the Default UI of Swagger Documentation  
+                swagger.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Version = "v1",
+                    Title = "ASP.NET 5 Web API",
+                    Description = "Authentication and Authorization in ASP.NET 5 with JWT and Swagger"
+                });
+                // To Enable authorization using Swagger (JWT)  
+                swagger.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Enter 'Bearer' [space] and then your valid token in the text input below.\r\n\r\nExample: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\"",
+                });
+                swagger.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                        {
+                        new OpenApiSecurityScheme
+                        {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        },
+                        Scheme = "oauth2",
+                        Name = "Bearer",
+                        In = ParameterLocation.Header,
+                        },
+                        new string[] { }
+                    }
+                });
+            });
+        }
+
+    }
+}

@@ -1,0 +1,169 @@
+﻿using EMarket.BLL.Comman_Class.Interface;
+using EMarket.BLL.Interfaces.Vendor;
+using EMarket.DLL.Interfaces.Vendor;
+using EMarket.Entities;
+using EMarketDTO.Vendar;
+using LiteX.DbHelper.Npgsql;
+using System;
+using System.Collections.Generic;
+using System.Data.Common;
+using System.Linq;
+using System.Text;
+
+namespace EMarket.BLL.EMarket_Service.Vendor
+{
+   public  class Vendor_All_Order_List: IVendor_All_Order_List
+    {
+        IVendor_All_Order_List_Repository _inter;
+        PostgreSqlContext _context;
+        ISqlClass _sql;
+        IErrorClass _error;
+        public Vendor_All_Order_List(PostgreSqlContext context, ISqlClass sql, IErrorClass error,
+             IVendor_All_Order_List_Repository inter)
+        {
+            _context = context;
+            _sql = sql;
+            _error = error;
+            _inter = inter;
+        }
+        public Vendor_All_Order_ListDTO get_all_order(Vendor_All_Order_ListDTO dto)
+        {
+            var Params = new DbParameter[] { };
+            var page_form = Newtonsoft.Json.JsonConvert.SerializeObject(dto);
+            string methodname = "Vendor_All_Order_List/get_all_order";
+            try
+            {
+                dto.vendor_id = _context.Vendor_Profile_con.Where(a => a.user_id == dto.user_id).SingleOrDefault().vendor_id;
+
+                //get hub list 1
+                var dbParams1 = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_source_hub_id", 0)
+               };
+                Params = dbParams1;
+                dto.procedure_name = "fn_get_hub";
+                dto.hub_list_1 = _sql.Get_Data(dto.procedure_name, dbParams1);
+
+                //get hub list 2
+                var dbParams2 = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_source_hub_id", 0)
+               };
+                Params = dbParams2;
+                dto.procedure_name = "fn_get_hub";
+                dto.hub_list_2 = _sql.Get_Data(dto.procedure_name, dbParams2);
+
+
+                //get all vendor list
+                var dbParams = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_vendor_id", dto.vendor_id),
+                       DbHelper.CreateParameter("in_flg", "All")
+               };
+                Params = dbParams;
+                dto.procedure_name = "fn_get_vendor_all_order_list";
+                dto.vendor_order_list = _sql.Get_Data(dto.procedure_name, dbParams);
+            }
+            catch(Exception ex)
+            {
+                _error.errorlog(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, Params);
+            }
+            return dto;
+        }
+
+        public Vendor_All_Order_ListDTO update_order(Vendor_All_Order_ListDTO dto)
+        {
+            var Params = new DbParameter[] { };
+            var page_form = Newtonsoft.Json.JsonConvert.SerializeObject(dto);
+            string methodname = "Vendor_All_Order_List/update_order";
+            try
+            {
+                dto.vendor_id = _context.Vendor_Profile_con.Where(a => a.user_id == dto.user_id).SingleOrDefault().vendor_id;
+                if (dto.order_accept_status == null)
+                {
+                    return dto;
+                }
+                if (dto.item_w == 0)
+                {
+                    return dto;
+                }
+
+
+                _inter.update_order(dto);
+            }
+            catch(Exception ex)
+            {
+                _error.errorlog_add(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, dto.inputvalue);
+            }
+            try
+            {
+              
+                //get all vendor list
+                var dbParams = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_vendor_id", dto.vendor_id),
+                      DbHelper.CreateParameter("in_flg", "All"),
+               };
+                Params = dbParams;
+                dto.procedure_name = "fn_get_vendor_all_order_list";
+                dto.vendor_order_list = _sql.Get_Data(dto.procedure_name, dbParams);
+            }
+            catch (Exception ex)
+            {
+                _error.errorlog(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, Params);
+            }
+            return dto;
+        }
+        public Vendor_All_Order_ListDTO get_item_lbh(Vendor_All_Order_ListDTO dto)
+        {
+            var Params = new DbParameter[] { };
+            var page_form = Newtonsoft.Json.JsonConvert.SerializeObject(dto);
+            string methodname = "Vendor_All_Order_List/get_item_lbh";
+            try
+            {
+                dto.vendor_id = _context.Vendor_Profile_con.Where(a => a.user_id == dto.user_id).SingleOrDefault().vendor_id;
+
+                _inter.update_order(dto);
+            }
+            catch (Exception ex)
+            {
+                _error.errorlog_add(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, dto.inputvalue);
+            }
+            try
+            {
+                // //get hub list 1
+                // var dbParams1 = new DbParameter[]
+                //{
+                //       DbHelper.CreateParameter("in_language_id", dto.language_id),
+                //       DbHelper.CreateParameter("in_source_hub_id", 0)
+                //};
+
+           
+
+
+                // get_item_lbh
+                var dbParams = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_order_item_id", dto.order_item_id),
+                      DbHelper.CreateParameter("in_order_id", dto.order_id),
+                      DbHelper.CreateParameter("in_item_id", dto.item_id),
+               };
+                Params = dbParams;
+                dto.procedure_name = "fn_get_item_lbh";
+                dto.item_lbh_list = _sql.Get_Data(dto.procedure_name, dbParams);
+            }
+            catch (Exception ex)
+            {
+                _error.errorlog(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, Params);
+            }
+            return dto;
+        }
+
+
+    }
+}

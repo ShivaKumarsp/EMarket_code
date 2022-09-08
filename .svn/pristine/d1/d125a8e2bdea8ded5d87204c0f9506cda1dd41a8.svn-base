@@ -1,0 +1,32 @@
+{
+  "JWTConfig": {
+    "Secret": "eyJhbGciOiJIUzI1NiJ9.ew0KICAic3ViIjogIjEyMzQ1Njc4OTAiLA0KICAibmFtZSI6ICJTaGl2YSIsDQogICJpYXQiOiAxNTE2MjM5MDIyDQp9.BEvLMO94aLABRT1S4vWuN2n0pSPMa5tb24zFJf7QNms",
+    "Authority": "http://localhost:1305/",
+    "Audience": "EMarket",
+    "Expires": 3
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  //"PostgreSqlConnectionString": "Host=localhost;Port=5432;User ID=postgres;Password=sql@123;Database=DemoTest;Pooling=true;"
+
+  "PostgreSqlConnectionString": "Host=192.168.1.31;Port=5432;User ID=shivakumar;Password=Avani@002;Database=EMarket_v2;Pooling=true;",
+
+  //"PostgreSqlConnectionString": "Host=localhost;Port=5432;User ID=postgres;Password=sql@123;Database=EMarket_Staging;Pooling=true;",
+
+  "ConnectionStrings": {
+    //"PostgreSql1": "Host=localhost;Port=5432;User ID=postgres;Password=sql@123;Database=EMarket_v2;Pooling=true;",
+
+    "PostgreSql1": "Host=192.168.1.31;Port=5432;User ID=shivakumar;Password=Avani@002;Database=EMarket_v2;Pooling=true;"
+
+    //"PostgreSql1": "Host=192.168.1.31;Port=5432;User ID=shivakumar;Password=Avani@002;Database=EMarket_Staging;Pooling=true;"
+  }
+
+
+}
+
+  

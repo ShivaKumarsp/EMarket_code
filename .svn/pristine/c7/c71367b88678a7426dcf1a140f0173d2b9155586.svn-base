@@ -1,0 +1,71 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace EMarketDTO.HubManager
+{
+    public class Assign_FcHub_HubDTO
+    {
+        public long user_id { get; set; }
+        public long language_id { get; set; }
+        public long hub_id { get; set; }
+        public long facilitation_center_id { get; set; }
+        public long delivery_executive_id { get; set; }
+        public long consignment_id { get; set; }
+        public string procedure_name { get; set; }
+        public string ipAddress { get; set; }
+        public string apitype { get; set; }
+        public long facilitation_id { get; set; }
+        public string status { get; set; }
+        public string message { get; set; }
+        public long hub_vehicle_id { get; set; }
+        public long own_vehicle { get; set; }
+
+
+        public string executive_list_dd { get; set; }
+        public string hub_vehicle_list_dd { get; set; }
+        public Array consignment_fc_hub_list { get; set; }
+        public Array consignment_hub_fc_list { get; set; }
+        public string facilitation_list { get; set; }
+        public string received_hub_item_list { get; set; }
+
+        public bool is_check { get; set; }
+        public long batch_id { get; set; }
+        public long first_facilitation_id { get; set; }
+        public long first_hub_id { get; set; }
+        public string facilitation_name { get; set; }
+        public string address { get; set; }
+        public long pincode { get; set; }
+        public long last_facilitation_id { get; set; }
+        public string tracking_id { get; set; }
+        public string item_name { get; set; }
+        public double consignment_l { get; set; }
+        public double consignment_b { get; set; }
+        public double consignment_h { get; set; }
+        public double weight { get; set; }
+        public double volumetric_weight { get; set; }
+
+        public consignment_array_fc_hub1[] consignment_array_fc_hub { get; set; }
+        public consignment_array_hub_fc1[] consignment_array_hub_fc { get; set; }
+        public get_data_list11[] get_data_list { get; set; }
+    }
+}
+
+public class consignment_array_fc_hub1
+{
+    public long first_facilitation_id { get; set; }
+    public long consignment_id { get; set; }
+    public string tracking_id { get; set; }
+}
+public class consignment_array_hub_fc1
+{
+
+    public long consignment_id { get; set; }
+    public string tracking_id { get; set; }
+}
+
+public class get_data_list11
+{
+    public long facilitation_id { get; set; }
+
+}

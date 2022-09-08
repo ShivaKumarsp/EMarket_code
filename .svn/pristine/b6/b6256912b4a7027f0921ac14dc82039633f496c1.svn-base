@@ -1,0 +1,44 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace EMarketDTO.Products
+{
+   public class Vendor_StoreDTO
+    {
+        public string username { get; set; }
+        public long vendor_id { get; set; }
+        public long user_id { get; set; }
+        public long store_id { get; set; }
+        public long language_id { get; set; }
+        public long country_id { get; set; }
+        public long state_id { get; set; }
+        public long pincode { get; set; }
+        public string ipAddress { get; set; }
+        public string apitype { get; set; }
+        public string city { get; set; }
+        public string status { get; set; }
+        public string message { get; set; }
+        public string store_name { get; set; }
+        public string store_title { get; set; }
+        public string store_details { get; set; }
+        public string store_image { get; set; }
+        public string pickup_location { get; set; }
+        public string procedure_name { get; set; }
+        public string vendor_store_list { get; set; }
+        public string statelist { get; set; }
+  
+
+        //bank details
+        public string vendor_bank { get; set; }
+        public long vendor_bank_id { get; set; }
+        public string account_type { get; set; }
+        public string account_holder_name { get; set; }
+        public string bank_account { get; set; }
+        public string ifsc_code { get; set; }
+        public string passbook_image { get; set; }
+        public long request_delete { get; set; }
+        public string request_status { get; set; }
+        public Array validation_list { get; set; }
+    }
+}

@@ -1,0 +1,633 @@
+﻿using EMarket.BLL.Comman_Class;
+using EMarket.BLL.Comman_Class.Interface;
+using EMarket.BLL.Interfaces.Vendor;
+using EMarket.DLL.Comman_Data;
+using EMarket.Entities;
+using EMarketDTO.Vendar;
+using LiteX.DbHelper.Core;
+using LiteX.DbHelper.Npgsql;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
+using System.Linq;
+using System.Text;
+
+namespace EMarket.BLL.EMarket_Service.Vendor
+{
+    public class Consignment: IConsignment
+    {
+        PostgreSqlContext _context;
+        ISqlClass _sql;
+        IErrorClass _error;
+        Db_Connection conn = new Db_Connection();
+        General_Class _cal = new General_Class();
+        int status = 0;
+        List<string> ret_validation = new List<string>();
+        comman_class cmm = new comman_class();
+        public Consignment(PostgreSqlContext context, ISqlClass sql, IErrorClass error)
+        {
+            _context = context;
+            _sql = sql;
+            _error = error;
+        }
+
+
+        public ConsignmentDTO get_data(ConsignmentDTO dto)
+        {
+            var page_form = Newtonsoft.Json.JsonConvert.SerializeObject(dto);
+            string methodname = "Consignment/get_data";
+            var Params = new DbParameter[] { };
+            try
+            {
+                
+              
+
+                dto.first_hub_id = 8;
+                //get hub list 1
+                var dbParams6 = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_first_hub_id", dto.first_hub_id)
+               };
+                Params = dbParams6;
+                dto.procedure_name = "fn_get_hub_cal";
+                dto.hub_list_cal = _sql.fn_get_list(dto.procedure_name, dbParams6);
+
+                int[] arr = { 0, 30, 13, 10};
+                int n = arr.Length;
+                int x = 0;
+                int y = 10;
+
+                var dis = _cal.minDist(arr, n, x, y);
+
+
+
+
+
+
+
+
+
+                //get hub list 1
+                var dbParams = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_source_hub_id", 0)
+               };
+                Params = dbParams;
+                dto.procedure_name = "fn_get_hub";
+                dto.hub_list_1 = _sql.Get_Data(dto.procedure_name, dbParams);
+
+                //get hub list 2
+                var dbParams1 = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_source_hub_id", 0)
+               };
+                Params = dbParams1;
+                dto.procedure_name = "fn_get_hub";
+                dto.hub_list_2 = _sql.Get_Data(dto.procedure_name, dbParams1);
+
+                //get consignment_list
+                var dbParams2 = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_user_id", dto.user_id)
+               };
+                Params = dbParams2;
+                dto.procedure_name = "fn_get_consignment_list";
+                dto.consignment_list = _sql.Get_Data(dto.procedure_name, dbParams2);
+
+
+                //get cal hub list 
+                var dbParams7 = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                 };
+                Params = dbParams7;
+                dto.procedure_name = "fn_get_calculate_hub_route";
+                dto.hub_route_list = _sql.Get_Data(dto.procedure_name, dbParams7);
+                
+
+            }
+            catch (Exception ex)
+            {
+                _error.errorlog(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, Params);
+            }
+
+            return dto;
+        }
+        public ConsignmentDTO save_consignment(ConsignmentDTO dto)
+        {
+            var page_form = Newtonsoft.Json.JsonConvert.SerializeObject(dto);
+            string methodname = "Consignment/save_consignment";
+            var Params = new DbParameter[] { };
+            IDbHelper _dbHelper = new NpgsqlHelper(conn.ConnectionString);
+
+
+            foreach (var item in dto.hubarray)
+            {
+                var ss = item;
+
+                var dbParams = new DbParameter[]
+                 {
+                    DbHelper.CreateParameter("in_consignment_id", dto.consignment_id),
+                    DbHelper.CreateParameter("in_first_hub_id", item.first_hub_id),
+                    DbHelper.CreateParameter("in_last_hub_id", item.last_hub_id),
+                    DbHelper.CreateParameter("in_movement_date_time", item.movement_date_time),
+                    DbHelper.CreateParameter("in_departure_time", DateTime.Now.ToString("hh:mm tt")),
+                    DbHelper.CreateParameter("in_user_id", dto.user_id)
+                      };
+
+                Params = dbParams;
+                var spName = "call sp_save_hub_departure_schedule(:in_consignment_id,:in_first_hub_id,:in_last_hub_id,:in_movement_date_time,:in_departure_time,:in_user_id)";
+                status = _dbHelper.ExecuteNonQuery(spName, CommandType.Text, dbParams);
+
+            }
+
+
+            if (ret_validation.Count > 0)
+            {
+                dto.status = "Validation";
+                dto.validation_list = ret_validation.ToArray();
+                return dto;
+            }
+
+            try
+            {
+                //get hub list 1
+                var dbParams6 = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_first_hub_id", dto.first_hub_id)
+               };
+                Params = dbParams6;
+                dto.procedure_name = "fn_get_hub_cal";
+                dto.hub_list_cal = _sql.fn_get_list(dto.procedure_name, dbParams6);
+
+                int[] arr = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+                int n = arr.Length;
+                int x = 3;
+                int y = 6;
+
+                var dis = _cal.minDist(arr, n, x, y);
+
+
+                if (dto.consignment_id > 0)
+                {
+                   
+                }
+                if (dto.consignment_id == 0)
+                {
+                   
+                }
+                var hub_route = "";
+                String[] strlist = dto.hub_route.Split(",");
+                foreach (String s in strlist)
+                {
+                    var result = _context.Master_HubDMO_con.Where(a => a.hub_id == Convert.ToInt64(s)).FirstOrDefault();
+                    hub_route = hub_route + "=>" + result.hub_name;
+                }
+                var tracking_string = cmm.RandomString(10);
+                var tracking_int = cmm.RandomString(5);
+                var tracking_id = dto.order_id + "_" + tracking_string + tracking_int;
+
+                var dbParams = new DbParameter[]
+                    {
+                    DbHelper.CreateParameter("in_consignment_id", dto.consignment_id),
+                    DbHelper.CreateParameter("in_hub_route_id", dto.hub_route_id),
+                    DbHelper.CreateParameter("in_user_id", dto.user_id),
+                    DbHelper.CreateParameter("in_hub_route", hub_route),
+                    DbHelper.CreateParameter("in_tracking_id", tracking_id),
+
+                    
+                         };
+
+                Params = dbParams;
+                var spName = "call sp_save_consignment(:in_consignment_id,:in_hub_route_id,:in_user_id,:in_hub_route,:in_tracking_id)";
+                status = _dbHelper.ExecuteNonQuery(spName, CommandType.Text, dbParams);
+                if (status == -1)
+                {
+                    if (dto.consignment_id > 0)
+                    {
+                        dto.status = "Insert";
+                        dto.message = "Label Generated";
+                    }
+                    else
+                    {
+                        dto.status = "Insert";
+                        dto.message = "Consignment Inserted Successfully";
+                    }
+
+                }
+                else
+                {
+                    dto.status = "Failed";
+                    dto.message = "Label Generate Failed";
+                }
+
+                if (dto.consignment_id > 0 && dto.status == "Insert")
+                {
+                    var invoicelist = _context.Item_InvoiceDMO_con.ToList();
+                    if (invoicelist.Count == 0)
+                    {
+                        dto.invoice_number = dto.consignment_id + "-" + 1;
+                    }
+                    else
+                    {
+                        var invoicemax = _context.Item_InvoiceDMO_con.Max(a => a.invoice_id);
+                        var invoicestring = _context.Item_InvoiceDMO_con.Where(a => a.invoice_id == invoicemax).SingleOrDefault();
+
+                        string[] invoicesplit = invoicelist[0].invoice_number.Split('-');
+
+                        
+                        var split2 = Convert.ToInt32(invoicesplit[1]) + 1;
+                        dto.invoice_number = dto.consignment_id + "-" + split2;
+                    }
+
+                    // invoice create
+                    var dbParams7 = new DbParameter[]
+                       {
+                     DbHelper.CreateParameter("in_consignment_id", dto.consignment_id),
+                     DbHelper.CreateParameter("in_order_item_id", dto.order_item_id),
+                    DbHelper.CreateParameter("in_user_id", dto.user_id),
+                    DbHelper.CreateParameter("in_language_id", dto.language_id),
+                    DbHelper.CreateParameter("in_invoice_number", dto.invoice_number)
+                            };
+                    Params = dbParams7;
+                    dto.procedure_name = "call sp_create_invoice(:in_consignment_id, :in_order_item_id,:in_user_id,:in_language_id,:in_invoice_number)";
+                    status = _dbHelper.ExecuteNonQuery(dto.procedure_name, CommandType.Text, dbParams7);
+                }
+
+
+                //get hub list 1
+                var dbParams1 = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_source_hub_id", 0)
+               };
+                Params = dbParams1;
+                dto.procedure_name = "fn_get_hub";
+                dto.hub_list_1 = _sql.Get_Data(dto.procedure_name, dbParams1);
+
+                //get hub list 2
+                var dbParams2 = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_source_hub_id", 0)
+               };
+                Params = dbParams2;
+                dto.procedure_name = "fn_get_hub";
+                dto.hub_list_2 = _sql.Get_Data(dto.procedure_name, dbParams2);
+
+                //get consignment_list
+                var dbParams3 = new DbParameter[]
+               {
+                     DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_user_id", dto.user_id)
+               };
+                Params = dbParams3;
+                dto.procedure_name = "fn_get_consignment_list";
+                dto.consignment_list = _sql.Get_Data(dto.procedure_name, dbParams3);
+
+
+
+                //get cal hub list 
+                var dbParams8 = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                 };
+                Params = dbParams8;
+                dto.procedure_name = "fn_get_calculate_hub_route";
+                dto.hub_route_list = _sql.Get_Data(dto.procedure_name, dbParams8);
+
+                var dbParams9 = new DbParameter[]
+              {
+                 DbHelper.CreateParameter("in_language_id", dto.language_id),
+                   DbHelper.CreateParameter("in_consignment_id", dto.consignment_id)
+              };
+                Params = dbParams9;
+                dto.procedure_name = "fn_get_consignment_print_data";
+                dto.consignment_print_data = _sql.Get_Data(dto.procedure_name, dbParams9);
+
+                var dbParams10 = new DbParameter[]
+              {
+                 DbHelper.CreateParameter("in_language_id", dto.language_id),
+                   DbHelper.CreateParameter("in_consignment_id", dto.consignment_id)
+              };
+                Params = dbParams10;
+                dto.procedure_name = "fn_get_consignment_print_data_two";
+                dto.consignment_print_data_two = _sql.Get_Data(dto.procedure_name, dbParams10);
+
+
+
+            }
+            catch (Exception ex)
+            {
+                _error.errorlog(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, Params);
+            }
+
+            return dto;
+        }
+        public ConsignmentDTO consignment_print_data(ConsignmentDTO dto)
+        {
+            var page_form = Newtonsoft.Json.JsonConvert.SerializeObject(dto);
+            string methodname = "Consignment/consignment_print_data";
+            var Params = new DbParameter[] { };
+            IDbHelper _dbHelper = new NpgsqlHelper(conn.ConnectionString);
+            try
+            {   
+                var dbParams = new DbParameter[]
+               {
+                 DbHelper.CreateParameter("in_language_id", dto.language_id),
+                   DbHelper.CreateParameter("in_consignment_id", dto.consignment_id)
+               };
+                Params = dbParams;
+                dto.procedure_name = "fn_get_consignment_print_data";
+                dto.consignment_print_data = _sql.Get_Data(dto.procedure_name, dbParams);
+
+                var dbParams1 = new DbParameter[]
+              {
+                 DbHelper.CreateParameter("in_language_id", dto.language_id),
+                   DbHelper.CreateParameter("in_consignment_id", dto.consignment_id)
+              };
+                Params = dbParams1;
+                dto.procedure_name = "fn_get_consignment_print_data_two";
+                dto.consignment_print_data_two = _sql.Get_Data(dto.procedure_name, dbParams1);
+
+                //get invoice list Mukta 20-8-2022 
+                var dbParams8 = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_consignment_id", dto.consignment_id),
+                      DbHelper.CreateParameter("in_order_id", dto.order_id),
+                      
+                 };
+                Params = dbParams8;
+                dto.procedure_name = "fn_get_invoice_print_data";
+                dto.invoice_list = _sql.Get_Data(dto.procedure_name, dbParams8);
+                var dbParams9= new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_consignment_id", dto.consignment_id),
+                      
+                 };
+                Params = dbParams9;
+                dto.procedure_name = "fn_get_invoice_print_data_two";
+                dto.invoice_list_one = _sql.Get_Data(dto.procedure_name, dbParams9);
+                var dbParams10 = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_order_id", dto.order_id),
+                };
+                //invoice address
+                Params = dbParams10;
+                dto.procedure_name = "fn_get_invoice_print_data_three";
+                dto.invoice_list_two = _sql.Get_Data(dto.procedure_name, dbParams10);
+
+            }
+            catch (Exception ex)
+            {
+                _error.errorlog(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, Params);
+            }
+
+            return dto;
+        }
+        public ConsignmentDTO consignment_print_update(ConsignmentDTO dto)
+        {
+            var page_form = Newtonsoft.Json.JsonConvert.SerializeObject(dto);
+            string methodname = "Consignment/consignment_print_update";
+            var Params = new DbParameter[] { };
+            IDbHelper _dbHelper = new NpgsqlHelper(conn.ConnectionString);
+            try
+            {
+                var dbParams = new DbParameter[]
+                  {
+                    DbHelper.CreateParameter("in_consignment_id", dto.consignment_id),
+                  };
+
+                Params = dbParams;
+                var spName = "call sp_update_consignment_print(:in_consignment_id)";
+                status = _dbHelper.ExecuteNonQuery(spName, CommandType.Text, dbParams);
+                if (status == -1)
+                {
+                    dto.status = "Update";
+
+                }
+                else
+                {
+                    dto.status = "Failed";
+                    
+                }
+                //get consignment_list
+                var dbParams2 = new DbParameter[]
+               {
+                    DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_user_id", dto.user_id)
+               };
+                Params = dbParams2;
+                dto.procedure_name = "fn_get_consignment_list";
+                dto.consignment_list = _sql.Get_Data(dto.procedure_name, dbParams2);
+
+
+            }
+            catch (Exception ex)
+            {
+                _error.errorlog(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, Params);
+            }
+
+            return dto;
+        }
+        public ConsignmentDTO consignment_get_edit_data(ConsignmentDTO dto)
+        {
+            var page_form = Newtonsoft.Json.JsonConvert.SerializeObject(dto);
+            string methodname = "Consignment/consignment_get_edit_data";
+            var Params = new DbParameter[] { };
+            IDbHelper _dbHelper = new NpgsqlHelper(conn.ConnectionString);
+            try
+            {
+                //get consignment_list
+                var dbParams2 = new DbParameter[]
+               {
+                    DbHelper.CreateParameter("in_consignment_id", dto.consignment_id),
+                    DbHelper.CreateParameter("in_language_id", dto.consignment_id),
+               };
+                Params = dbParams2;
+                dto.procedure_name = "fn_get_consignment_edit_data";
+                dto.edit_consignment_data = _sql.Get_Data(dto.procedure_name, dbParams2);
+
+
+            }
+            catch (Exception ex)
+            {
+                _error.errorlog(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, Params);
+            }
+
+            return dto;
+        }
+
+
+        // handover
+        public ConsignmentDTO get_data_handover(ConsignmentDTO dto)
+        {
+            var page_form = Newtonsoft.Json.JsonConvert.SerializeObject(dto);
+            string methodname = "Consignment/get_data_handover";
+            var Params = new DbParameter[] { };
+            try
+            {
+                //get hub list 1
+                var dbParams = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_user_id", dto.user_id)
+               };
+                Params = dbParams;
+                dto.procedure_name = "fn_get_handover_list";
+                dto.handover_list = _sql.Get_Data(dto.procedure_name, dbParams);
+                //ready to handover consignment list
+                var dbParams1 = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_user_id", dto.user_id)
+               };
+                Params = dbParams1;
+                dto.procedure_name = "fn_get_Readytohandover_list";
+                dto.readytohandover_list = _sql.Get_Data(dto.procedure_name, dbParams1);
+            }
+            catch (Exception ex)
+            {
+                _error.errorlog(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, Params);
+            }
+
+            return dto;
+        }
+        public ConsignmentDTO ready_to_handover(ConsignmentDTO dto)
+        {
+            var page_form = Newtonsoft.Json.JsonConvert.SerializeObject(dto);
+            string methodname = "Consignment/save_item_handover";
+            var Params = new DbParameter[] { };
+            IDbHelper _dbHelper = new NpgsqlHelper(conn.ConnectionString);
+            try
+            {
+                foreach (var item in dto.handover_array)
+                {
+                    var dbParams2 = new DbParameter[]
+                     {
+                    DbHelper.CreateParameter("in_consignment_id", item.consignment_id),
+                    DbHelper.CreateParameter("in_first_hub_id", item.first_hub_id),
+                    DbHelper.CreateParameter("in_language_id", dto.language_id),
+                    DbHelper.CreateParameter("in_user_id", dto.user_id)
+                     };
+
+                    Params = dbParams2;
+                    var spName = "call sp_save_item_handover(:in_consignment_id,:in_first_hub_id,:in_language_id,:in_user_id)";
+                    status = _dbHelper.ExecuteNonQuery(spName, CommandType.Text, dbParams2);
+                    if (status == -1)
+                    {
+                        dto.status = "Update";
+
+                    }
+                    else
+                    {
+                        dto.status = "Failed";
+
+                    }
+                }
+
+
+
+
+
+
+                //get hub list 1
+                var dbParams = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_user_id", dto.user_id)
+               };
+                Params = dbParams;
+                dto.procedure_name = "fn_get_handover_list";
+                dto.handover_list = _sql.Get_Data(dto.procedure_name, dbParams);
+
+
+            }
+            catch (Exception ex)
+            {
+                _error.errorlog(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, Params);
+            }
+
+            return dto;
+        }
+        public ConsignmentDTO handover_list(ConsignmentDTO dto)
+        {
+            var page_form = Newtonsoft.Json.JsonConvert.SerializeObject(dto);
+            string methodname = "Consignment/handover_list";
+            var Params = new DbParameter[] { };
+            IDbHelper _dbHelper = new NpgsqlHelper(conn.ConnectionString);
+            try
+            {
+                //get hub list 1
+                var dbParams = new DbParameter[]
+               {
+                      DbHelper.CreateParameter("in_language_id", dto.language_id),
+                      DbHelper.CreateParameter("in_user_id", dto.user_id)
+               };
+                Params = dbParams;
+                dto.procedure_name = "fn_get_all_handover_list";
+                dto.all_handover_list = _sql.Get_Data(dto.procedure_name, dbParams);
+
+            }
+            catch (Exception ex)
+            {
+                _error.errorlog(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, Params);
+            }
+
+            return dto;
+        }
+
+        //Mukta 23-08-2022
+        public ConsignmentDTO invoice_print_update(ConsignmentDTO dto)
+        {
+            var page_form = Newtonsoft.Json.JsonConvert.SerializeObject(dto);
+            string methodname = "Consignment/invoice_print_update";
+            var Params = new DbParameter[] { };
+            IDbHelper _dbHelper = new NpgsqlHelper(conn.ConnectionString);
+            try
+            {
+                var dbParams = new DbParameter[]
+                  {
+                    DbHelper.CreateParameter("in_consignment_id", dto.consignment_id),
+                  };
+
+                Params = dbParams;
+                var spName = "call sp_update_invoice_print(:in_consignment_id)";
+                status = _dbHelper.ExecuteNonQuery(spName, CommandType.Text, dbParams);
+                if (status == -1)
+                {
+                    dto.status = "Update";
+
+                }
+                else
+                {
+                    dto.status = "Failed";
+
+                }
+                //get consignment_list
+                var dbParams2 = new DbParameter[]
+               {
+                    DbHelper.CreateParameter("in_language_id", dto.language_id),
+                    DbHelper.CreateParameter("in_user_id", dto.user_id)
+               };
+                Params = dbParams2;
+                dto.procedure_name = "fn_get_consignment_list";
+                dto.consignment_list = _sql.Get_Data(dto.procedure_name, dbParams2);
+            }
+            catch (Exception ex)
+            {
+                _error.errorlog(ex, dto.user_id, methodname, dto.ipAddress, dto.apitype, page_form, dto.procedure_name, Params);
+            }
+
+            return dto;
+        }
+    }
+}

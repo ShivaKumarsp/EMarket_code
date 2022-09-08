@@ -1,0 +1,185 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
+using Microsoft.AspNetCore.Http;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage;
+
+using ImageMagick;
+using EMarketDTO.CommanDTO;
+using Microsoft.AspNetCore.Authorization;
+using Azure.Storage.Blobs;
+
+namespace EMarket.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize]
+    public class ImageUploadController : Controller
+    {
+        private readonly IHostingEnvironment _hostingEnvironment;
+        private readonly IHttpContextAccessor _accessor;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+
+        string accountname = "";
+        string accesskey = "";
+
+        public ImageUploadController(IHostingEnvironment hostingEnvironment, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment webHostEnvironment)
+        {
+            _hostingEnvironment = hostingEnvironment;
+            _accessor = httpContextAccessor;
+            _webHostEnvironment = webHostEnvironment;
+
+
+        }
+
+
+        private string GenerateFileName(string fileName)
+        {
+            try
+            {
+                string strFileName = string.Empty;
+                string[] strName = fileName.Split('.');
+                strFileName = fileName+DateTime.Now.ToUniversalTime().ToString("yyyyMMdd\\THHmmssfff") + "." +
+                   strName[strName.Length - 1];
+                return strFileName;
+            }
+            catch (Exception ex)
+            {
+                return fileName;
+            }
+        }
+
+        [HttpPost("Upload_Image")]
+        [AllowAnonymous]
+        public async Task<filedetails> Upload_Image(IFormFile file)
+        {
+            filedetails emp = new filedetails();
+            try
+            {       
+
+                var filename = GenerateFileName(file.FileName);
+                var fileUrl = "";
+                BlobContainerClient container = new BlobContainerClient("DefaultEndpointsProtocol=https;AccountName=demoschooltest;AccountKey=B0mUb4zemfjGP/6AlY5bjXYnrxn1aSusOP0KP9vKakyLyGuIolXgNva01gwVrayk+8vUQ9ymNWMW+AStrS430A==;EndpointSuffix=core.windows.net", "emarketplace");
+                try
+                {
+                    BlobClient blob = container.GetBlobClient("profile"+"/"+filename);
+                    using (Stream stream = file.OpenReadStream())
+                    {
+                        blob.Upload(stream);
+                    }
+                    fileUrl = blob.Uri.AbsoluteUri;
+                }
+                catch (Exception ex) { }
+                emp.path = fileUrl;
+
+            }
+            catch (Exception ex)
+            {
+
+            }
+            return emp;
+        }
+    
+
+
+
+        [HttpPost("DocumentUpload")]
+        [AllowAnonymous]
+        public async Task<filedetails> DocumentUpload(IFormFile File)
+        {
+
+            string basefilepath = "";
+            // file save project folder
+            var names = new List<string>();
+            var contentTypes = new List<string>();
+
+            string newImageName = "";
+            List<string> Filesname = new List<string>();
+            List<filedetails> FilesPaths = new List<filedetails>();
+
+            //string filename = "";
+            //var path = Path.Combine(_webHostEnvironment.WebRootPath, "Gallery", File.FileName);
+            //using (var filestrem = new FileStream(path, FileMode.Create))
+            //{
+            //    File.CopyTo(filestrem);
+            //}
+
+            //var baseurl = _accessor.HttpContext.Request.Scheme + "://" +
+            //    _accessor.HttpContext.Request.Host +
+            //    _accessor.HttpContext.Request.PathBase;
+
+
+
+            filedetails emp = new filedetails();
+            emp.name = File.FileName;
+            //emp.path = filename;
+            FilesPaths.Add(emp);
+
+            //  File save drive folder
+            var fileName = string.Empty;
+            var nameofthefile = "";
+            string containername = "D:\\Upload\\";
+            //string folder = "gallery";
+            //if (File.Length > 0)
+            //{
+
+
+            //    var uploads = Path.Combine(containername, folder);
+
+            //    if (Directory.Exists(uploads))
+            //    {
+            //        Console.WriteLine("That path exists already.");
+            //    }
+            //    else
+            //    {
+            //        DirectoryInfo di = Directory.CreateDirectory(uploads);
+            //    }
+            //    fileName = File.FileName;
+            //    using (var fileStream = new FileStream(Path.Combine(uploads, fileName), FileMode.Create))
+            //    {
+            //        await File.CopyToAsync(fileStream);
+            //        nameofthefile = fileName;
+            //    }
+
+
+
+            //    string newpath = Path.Combine(uploads) + $@"\{fileName}";
+            //    emp.path = newpath;
+
+            //}
+
+            // file convert base64
+            if (File.Length > 0)
+            {
+                using (var ms = new MemoryStream())
+                {
+                    File.CopyTo(ms);
+                    var fileBytes = ms.ToArray();
+                    basefilepath = Convert.ToBase64String(fileBytes);
+                    //emp.path = "data:image/jpeg;base64," + basefilepath;
+                    emp.path = basefilepath;
+                }
+            }
+
+
+            return emp;
+        }
+
+
+
+    }
+
+
+    public class filedetails
+    {
+        public string name { get; set; }
+        public string path { get; set; }
+
+    }
+}
